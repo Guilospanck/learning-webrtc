@@ -1,23 +1,49 @@
+const screenSharingBtn = document.getElementById("screenSharingBtn");
+
 export const initiateWebRTC = async () => {
-  await askForPermissionAndSpecificDevices();
+  await getAudioAndVideoDevices();
+
+  // The screensharing MUST be user initiated.
+  screenSharingBtn!.addEventListener("click", async () => {
+    await getScreenSharingAndRecording();
+  });
+
   await getConnectedDevices();
   listenForDevicesChanges;
 };
 
-const askForPermissionAndSpecificDevices = async (
+const getAudioAndVideoDevices = async (
   // we can ask for specific camera/audio configs here as well.
   constraints: MediaStreamConstraints = { video: true, audio: true },
 ) => {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
-    console.log("Got MediaStream:", stream);
+    const stream: MediaStream =
+      await navigator.mediaDevices.getUserMedia(constraints);
+    console.log("[User media] Got MediaStream:", stream);
 
-    const videoElement = document.querySelector(
-      "video#localVideo",
+    const videoElement = document.getElementById(
+      "cameraVideo",
     )! as HTMLVideoElement;
     videoElement.srcObject = stream;
   } catch (error) {
     console.error("Error accessing media devices.", error);
+  }
+};
+
+const getScreenSharingAndRecording = async (
+  options?: DisplayMediaStreamOptions,
+) => {
+  try {
+    const stream: MediaStream =
+      await navigator.mediaDevices.getDisplayMedia(options);
+    console.log("[Display media] Got MediaStream: ", stream);
+
+    const videoElement = document.getElementById(
+      "screenSharingVideo",
+    )! as HTMLVideoElement;
+    videoElement.srcObject = stream;
+  } catch (error) {
+    console.error("Error accessing display media.", error);
   }
 };
 

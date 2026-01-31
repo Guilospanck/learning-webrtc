@@ -7,7 +7,27 @@
     <title>learning-webrtc</title>
   </head>
   <body>
-    <div id="app"></div>
+    <div class="flex flex-col gap-2">
+      <button id="screenSharingBtn">Start screensharing</button>
+      <div class="flex flex-row gap-2">
+        <video
+          id="cameraVideo"
+          autoplay
+          playsinline
+          muted
+          controls="false"
+        ></video>
+        <video
+          id="screenSharingVideo"
+          autoplay
+          playsinline
+          muted
+          controls="false"
+          width="640px"
+          height="320px"
+        ></video>
+      </div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
