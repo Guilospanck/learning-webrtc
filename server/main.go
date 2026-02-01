@@ -29,10 +29,15 @@ type Client struct {
 
 type Hub struct {
 	clients    map[*Client]struct{}
-	broadcast  chan []byte
+	broadcast  chan broadcastMessage
 	register   chan *Client
 	unregister chan *Client
 	mutex      sync.RWMutex
+}
+
+type broadcastMessage struct {
+	message []byte
+	sender  *Client
 }
 
 var upgrader = websocket.Upgrader{
@@ -44,7 +49,7 @@ var upgrader = websocket.Upgrader{
 func newHub() *Hub {
 	return &Hub{
 		clients:    make(map[*Client]struct{}),
-		broadcast:  make(chan []byte),
+		broadcast:  make(chan broadcastMessage),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 	}
@@ -68,11 +73,14 @@ func (h *Hub) run() {
 			}
 			h.mutex.Unlock()
 
-		case message := <-h.broadcast:
+		case bm := <-h.broadcast:
 			h.mutex.RLock()
 			for client := range h.clients {
+				if client == bm.sender {
+					continue
+				}
 				select {
-				case client.send <- message:
+				case client.send <- bm.message:
 				default:
 					close(client.send)
 					delete(h.clients, client)
@@ -125,7 +133,10 @@ func (c *Client) readPump(h *Hub) {
 		log.Printf("Received message: type=%s", msg.MsgType)
 
 		broadcastMsg, _ := json.Marshal(msg)
-		h.broadcast <- broadcastMsg
+		h.broadcast <- broadcastMessage{
+			message: broadcastMsg,
+			sender:  c,
+		}
 	}
 }
 
