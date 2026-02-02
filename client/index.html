@@ -4,38 +4,89 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>learning-webrtc</title>
+    <title>WebRTC Learning Hub</title>
+    <link rel="stylesheet" href="src/style.css" />
+
   </head>
   <body>
-    <div class="flex flex-col gap-2">
-      <button id="screenSharingBtn">Start screensharing</button>
-      <button id="initiateOfferBtn">Initiate offer</button>
-      <div class="flex flex-row gap-2">
-        <video
-          id="local-camera-video"
-          autoplay
-          playsinline
-          muted
-          controls="false"
-        ></video>
-        <video
-          id="local-sharing-screen"
-          autoplay
-          playsinline
-          muted
-          controls="false"
-          width="640px"
-          height="320px"
-        ></video>
-        <video
-          id="remote-camera-video"
-          autoplay
-          playsinline
-          muted
-          controls="false"
-        ></video>
-      </div>
+    <div class="container">
+      <header class="header">
+        <h1>WebRTC Learning Hub</h1>
+        <p>Explore real-time communication capabilities</p>
+      </header>
+
+      <main>
+        <div class="main-content">
+          <aside class="controls-panel">
+            <section class="control-section">
+              <h2 class="section-title">Connection</h2>
+              <div class="button-group">
+                <button id="initiate-offer-btn">Start Connection</button>
+                <button id="create-data-channel-btn">Create Data Channel</button>
+              </div>
+            </section>
+
+            <section class="control-section">
+              <h2 class="section-title">Media Sharing</h2>
+              <div class="button-group">
+                <button id="screen-sharing-btn">Share Screen</button>
+              </div>
+            </section>
+
+            <section class="control-section">
+              <h2 class="section-title">
+                Messaging
+                <span class="status-indicator" id="messaging-status"></span>
+              </h2>
+              <div class="messaging-section">
+                <textarea
+                  id="messages"
+                  placeholder="Messages will appear here..."
+                  readonly
+                ></textarea>
+                <div class="button-row">
+                  <input 
+                    id="message-box" 
+                    type="text" 
+                    placeholder="Type a message..."
+                    disabled 
+                  />
+                  <button id="send-message-btn" disabled>Send</button>
+                </div>
+              </div>
+            </section>
+          </aside>
+
+          <section class="video-section">
+            <h2 class="section-title">Video Streams</h2>
+            <div class="video-grid">
+              <div class="video-container">
+                <video id="local-camera-video" autoplay playsinline muted></video>
+                <div class="video-label">
+                  Local Camera
+                  <span class="status-indicator" id="local-camera-status"></span>
+                </div>
+              </div>
+              <div class="video-container">
+                <video id="local-sharing-screen" autoplay playsinline muted></video>
+                <div class="video-label">
+                  Screen Share
+                  <span class="status-indicator" id="screen-status"></span>
+                </div>
+              </div>
+              <div class="video-container">
+                <video id="remote-camera-video" autoplay playsinline muted></video>
+                <div class="video-label">
+                  Remote Camera
+                  <span class="status-indicator" id="remote-camera-status"></span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
     </div>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
