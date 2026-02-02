@@ -10,9 +10,24 @@ const peerConnection = new RTCPeerConnection(CONFIGURATION);
 
 export const initPeer = () => {
   // Someone sent us a response to our offering
-  onAnswer();
+  onRemoteAnswer();
   // Someone sent us an offering
-  onOffer();
+  onRemoteOffer();
+  // Someone sent us an ICE candidate
+  onRemoteIceCandidate();
+
+  // Listen for local ICE candidates on the local RTCPeerConnection
+  peerConnection.addEventListener("icecandidate", (event) => {
+    if (event.candidate) {
+      console.info(
+        "Received local ICE candidate. Sending it to remote peer...",
+      );
+      signalingChannel.send({
+        msgType: "ice_candidate",
+        value: JSON.stringify(event.candidate),
+      });
+    }
+  });
 };
 
 // Offering is an active process. Answering is passive.
@@ -25,11 +40,11 @@ export const sendOffer = async () => {
   signalingChannel.send({ msgType: "offer", value: JSON.stringify(offer) });
 };
 
-const onAnswer = () => {
+const onRemoteAnswer = () => {
   console.info("Initiating listener for `answer` SDP messages...");
   signalingChannel.addMessageEventListener(async (message: Message) => {
     if (message.msgType === "answer") {
-      console.info("Received answer: ", message);
+      console.info("Received remote answer: ", message);
       try {
         const answer = JSON.parse(message.value) as RTCSessionDescriptionInit;
 
@@ -46,11 +61,11 @@ const onAnswer = () => {
   });
 };
 
-const onOffer = () => {
+const onRemoteOffer = () => {
   console.info("Initiating listener for `offer` SDP messages...");
   signalingChannel.addMessageEventListener(async (message: Message) => {
     if (message.msgType === "offer") {
-      console.info("Received offer: ", message);
+      console.info("Received remote offer: ", message);
       try {
         const offer = JSON.parse(message.value) as RTCSessionDescriptionInit;
 
@@ -65,6 +80,24 @@ const onOffer = () => {
           value: JSON.stringify(answer),
         });
         console.info("Sent `answer` message based on an `offer` event!");
+      } catch (err) {
+        console.error(
+          "Something went wrong while handling the msgType offer: ",
+          err,
+        );
+      }
+    }
+  });
+};
+
+const onRemoteIceCandidate = () => {
+  console.info("Initiating listener for `ice_candidate` messages...");
+  signalingChannel.addMessageEventListener(async (message: Message) => {
+    if (message.msgType === "ice_candidate") {
+      console.info("Received remote ICE candidate: ", message);
+      try {
+        const iceCandidate = JSON.parse(message.value) as RTCIceCandidateInit;
+        await peerConnection.addIceCandidate(iceCandidate);
       } catch (err) {
         console.error(
           "Something went wrong while handling the msgType offer: ",
