@@ -17,6 +17,7 @@ export const initPeer = () => {
 
 // Offering is an active process. Answering is passive.
 export const sendOffer = async () => {
+  // SDP: Session Description Protocol
   console.info("Sending `offer` SDP message...");
   const offer = await peerConnection.createOffer();
   await peerConnection.setLocalDescription(offer);
@@ -28,6 +29,7 @@ const onAnswer = () => {
   console.info("Initiating listener for `answer` SDP messages...");
   signalingChannel.addMessageEventListener(async (message: Message) => {
     if (message.msgType === "answer") {
+      console.info("Received answer: ", message);
       try {
         const answer = JSON.parse(message.value) as RTCSessionDescriptionInit;
 
@@ -48,6 +50,7 @@ const onOffer = () => {
   console.info("Initiating listener for `offer` SDP messages...");
   signalingChannel.addMessageEventListener(async (message: Message) => {
     if (message.msgType === "offer") {
+      console.info("Received offer: ", message);
       try {
         const offer = JSON.parse(message.value) as RTCSessionDescriptionInit;
 

@@ -26,8 +26,8 @@ export class SignalingServer {
       console.error("Signaling server error:", error);
     };
 
-    this.socket.onmessage = (event: MessageEvent<Message>) => {
-      const message = event.data;
+    this.socket.onmessage = (event: MessageEvent<string>) => {
+      const message = JSON.parse(event.data) as Message;
       for (const callback of this.listeners.values()) {
         callback(message);
       }

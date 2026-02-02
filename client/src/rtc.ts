@@ -1,13 +1,18 @@
-import { initPeer } from "./peer";
+import { initPeer, sendOffer } from "./peer";
 
 const screenSharingBtn = document.getElementById("screenSharingBtn");
+const initiateOfferBtn = document.getElementById("initiateOfferBtn");
 
 export const initiateWebRTC = async () => {
   await getAudioAndVideoDevices();
 
   // The screensharing MUST be user initiated.
-  screenSharingBtn!.addEventListener("click", async () => {
+  screenSharingBtn?.addEventListener("click", async () => {
     await getScreenSharingAndRecording();
+  });
+
+  initiateOfferBtn?.addEventListener("click", async () => {
+    await sendOffer();
   });
 
   await getConnectedDevices();
