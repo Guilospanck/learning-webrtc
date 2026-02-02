@@ -6,7 +6,7 @@ const CONFIGURATION = {
 
 const signalingChannel = new SignalingServer();
 
-const peerConnection = new RTCPeerConnection(CONFIGURATION);
+export const peerConnection = new RTCPeerConnection(CONFIGURATION);
 
 export const initPeer = () => {
   // Someone sent us a response to our offering

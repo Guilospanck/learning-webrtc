@@ -1,4 +1,4 @@
-import { initPeer, sendOffer } from "./peer";
+import { initPeer, peerConnection, sendOffer } from "./peer";
 
 const screenSharingBtn = document.getElementById("screenSharingBtn");
 const initiateOfferBtn = document.getElementById("initiateOfferBtn");
@@ -18,7 +18,7 @@ export const initiateWebRTC = async () => {
   await getConnectedDevices();
   listenForDevicesChanges;
 
-  // Init peer offer/answer SDP events
+  // Init peer offer/answer SDP events and gather ICE candidates
   initPeer();
 };
 
@@ -35,6 +35,10 @@ const getAudioAndVideoDevices = async (
       "user-1-camera-video",
     )! as HTMLVideoElement;
     videoElement.srcObject = stream;
+
+    stream
+      .getTracks()
+      .forEach((track) => peerConnection.addTrack(track, stream));
   } catch (error) {
     console.error("Error accessing media devices.", error);
   }
