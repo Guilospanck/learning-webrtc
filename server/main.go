@@ -22,6 +22,15 @@ type Message struct {
 	Value   string  `json:"value"`
 }
 
+func (m *Message) IsValid() bool {
+	switch m.MsgType {
+	case Offer, Answer, IceCandidate:
+		return true
+	default:
+		return false
+	}
+}
+
 type Client struct {
 	conn *websocket.Conn
 	send chan []byte
@@ -127,6 +136,11 @@ func (c *Client) readPump(h *Hub) {
 		var msg Message
 		if err := json.Unmarshal(messageBytes, &msg); err != nil {
 			log.Printf("JSON unmarshal error: %v", err)
+			continue
+		}
+
+		if !msg.IsValid() {
+			log.Printf("Invalid message type: %s", msg.MsgType)
 			continue
 		}
 
