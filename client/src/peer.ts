@@ -23,10 +23,11 @@ const CONFIGURATION = {
 
 const signalingChannel = new SignalingServer();
 export const peerConnection = new RTCPeerConnection(CONFIGURATION);
-
 let dataChannel: RTCDataChannel | undefined = undefined;
 
 export const initPeer = () => {
+  // Handle automatic negotiation when data channels are created
+  onNegotiationNeeded();
   // Someone sent us a response to our offering
   onRemoteAnswer();
   // Someone sent us an offering
@@ -52,9 +53,13 @@ export const sendOffer = async () => {
 };
 
 export const createDataChannel = () => {
-  dataChannel = peerConnection.createDataChannel("messages");
-  console.info("Data channel created!");
-  listenToDataChannelEvents();
+  try {
+    dataChannel = peerConnection.createDataChannel("messages");
+    listenToDataChannelEvents();
+    console.info("Data channel created!");
+  } catch (err) {
+    console.error("Error creating data channel: ", err);
+  }
 };
 
 export const sendToDataChannel = (message: string) => {
@@ -190,6 +195,19 @@ const onConnectionCompleted = () => {
     console.info("Connection state changed: ", peerConnection.connectionState);
     if (peerConnection.connectionState === "connected") {
       console.log("Peer connected: ", event);
+    }
+  });
+};
+
+const onNegotiationNeeded = () => {
+  peerConnection.addEventListener("negotiationneeded", async () => {
+    console.info("Negotiation needed - creating offer...");
+    try {
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+      signalingChannel.send({ msgType: "offer", value: JSON.stringify(offer) });
+    } catch (err) {
+      console.error("Error during negotiation needed:", err);
     }
   });
 };
