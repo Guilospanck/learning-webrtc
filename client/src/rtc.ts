@@ -66,6 +66,17 @@ export const initiateWebRTC = async () => {
     messageBox.value = "";
   });
 
+  messageBox?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      const message = messageBox.value;
+      if (message.trim()) {
+        sendToDataChannel(message);
+        messageBox.value = "";
+      }
+    }
+  });
+
   await getConnectedDevices();
   listenForDevicesChanges;
 

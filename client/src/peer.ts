@@ -67,6 +67,7 @@ export const sendToDataChannel = (message: string) => {
 
   dataChannel.send(message);
   messagesTextArea.textContent += `Me: ${message}\n`;
+  messagesTextArea.scrollTop = messagesTextArea.scrollHeight;
 };
 
 const onRemoteDataChannel = () => {
@@ -105,6 +106,7 @@ const listenToDataChannelEvents = () => {
   dataChannel?.addEventListener("message", (event: MessageEvent<string>) => {
     const message = event.data;
     messagesTextArea.textContent += `Peer: ${message}\n`;
+    messagesTextArea.scrollTop = messagesTextArea.scrollHeight;
   });
 };
 
@@ -195,6 +197,11 @@ const onConnectionCompleted = () => {
     console.info("Connection state changed: ", peerConnection.connectionState);
     if (peerConnection.connectionState === "connected") {
       console.log("Peer connected: ", event);
+      const initiateOfferBtn = document.getElementById("initiate-offer-btn") as HTMLButtonElement;
+      if (initiateOfferBtn) {
+        initiateOfferBtn.textContent = "Connection established";
+        initiateOfferBtn.disabled = true;
+      }
     }
   });
 };
