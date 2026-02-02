@@ -32,7 +32,7 @@ const getAudioAndVideoDevices = async (
     console.log("[User media] Got MediaStream:", stream);
 
     const videoElement = document.getElementById(
-      "cameraVideo",
+      "user-1-camera-video",
     )! as HTMLVideoElement;
     videoElement.srcObject = stream;
   } catch (error) {
@@ -48,10 +48,10 @@ const getScreenSharingAndRecording = async (
       await navigator.mediaDevices.getDisplayMedia(options);
     console.log("[Display media] Got MediaStream: ", stream);
 
-    const videoElement = document.getElementById(
-      "screenSharingVideo",
+    const sharingScreenUserElement = document.getElementById(
+      "user-1-sharing-screen",
     )! as HTMLVideoElement;
-    videoElement.srcObject = stream;
+    sharingScreenUserElement.srcObject = stream;
   } catch (error) {
     console.error("Error accessing display media.", error);
   }

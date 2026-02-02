@@ -15,19 +15,10 @@ export const initPeer = () => {
   onRemoteOffer();
   // Someone sent us an ICE candidate
   onRemoteIceCandidate();
-
   // Listen for local ICE candidates on the local RTCPeerConnection
-  peerConnection.addEventListener("icecandidate", (event) => {
-    if (event.candidate) {
-      console.info(
-        "Received local ICE candidate. Sending it to remote peer...",
-      );
-      signalingChannel.send({
-        msgType: "ice_candidate",
-        value: JSON.stringify(event.candidate),
-      });
-    }
-  });
+  onLocalIceCandidate();
+  // Listen for successfully connected peers
+  onConnectionCompleted();
 };
 
 // Offering is an active process. Answering is passive.
@@ -41,7 +32,7 @@ export const sendOffer = async () => {
 };
 
 const onRemoteAnswer = () => {
-  console.info("Initiating listener for `answer` SDP messages...");
+  console.info("Initiating listener for remote `answer` SDP messages...");
   signalingChannel.addMessageEventListener(async (message: Message) => {
     if (message.msgType === "answer") {
       console.info("Received remote answer: ", message);
@@ -62,7 +53,7 @@ const onRemoteAnswer = () => {
 };
 
 const onRemoteOffer = () => {
-  console.info("Initiating listener for `offer` SDP messages...");
+  console.info("Initiating listener for remote `offer` SDP messages...");
   signalingChannel.addMessageEventListener(async (message: Message) => {
     if (message.msgType === "offer") {
       console.info("Received remote offer: ", message);
@@ -91,7 +82,7 @@ const onRemoteOffer = () => {
 };
 
 const onRemoteIceCandidate = () => {
-  console.info("Initiating listener for `ice_candidate` messages...");
+  console.info("Initiating listener for remote `ice_candidate` messages...");
   signalingChannel.addMessageEventListener(async (message: Message) => {
     if (message.msgType === "ice_candidate") {
       console.info("Received remote ICE candidate: ", message);
@@ -104,6 +95,30 @@ const onRemoteIceCandidate = () => {
           err,
         );
       }
+    }
+  });
+};
+
+const onLocalIceCandidate = () => {
+  peerConnection.addEventListener("icecandidate", (event) => {
+    if (event.candidate) {
+      console.info(
+        "Received local ICE candidate. Sending it to remote peer...",
+      );
+      signalingChannel.send({
+        msgType: "ice_candidate",
+        value: JSON.stringify(event.candidate),
+      });
+    }
+  });
+};
+
+const onConnectionCompleted = () => {
+  peerConnection.addEventListener("connectionstatechange", (event) => {
+    console.info("Connection state changed: ", peerConnection.connectionState);
+    if (peerConnection.connectionState === "connected") {
+      console.log("Peers connected!");
+      console.log(event);
     }
   });
 };
