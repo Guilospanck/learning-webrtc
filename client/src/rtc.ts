@@ -2,6 +2,15 @@ import { initPeer, peerConnection, sendOffer } from "./peer";
 
 const screenSharingBtn = document.getElementById("screenSharingBtn");
 const initiateOfferBtn = document.getElementById("initiateOfferBtn");
+const localVideoElement = document.getElementById(
+  "local-camera-video",
+)! as HTMLVideoElement;
+const localSharingScreenElement = document.getElementById(
+  "local-sharing-screen",
+)! as HTMLVideoElement;
+const remoteVideoElement = document.getElementById(
+  "remote-camera-video",
+)! as HTMLVideoElement;
 
 export const initiateWebRTC = async () => {
   await getAudioAndVideoDevices();
@@ -18,6 +27,9 @@ export const initiateWebRTC = async () => {
   await getConnectedDevices();
   listenForDevicesChanges;
 
+  // listen to remote tracks
+  addRemoteStreamTrack();
+
   // Init peer offer/answer SDP events and gather ICE candidates
   initPeer();
 };
@@ -31,17 +43,24 @@ const getAudioAndVideoDevices = async (
       await navigator.mediaDevices.getUserMedia(constraints);
     console.log("[User media] Got MediaStream:", stream);
 
-    const videoElement = document.getElementById(
-      "user-1-camera-video",
-    )! as HTMLVideoElement;
-    videoElement.srcObject = stream;
+    localVideoElement.srcObject = stream;
 
-    stream
-      .getTracks()
-      .forEach((track) => peerConnection.addTrack(track, stream));
+    addLocalStreamTracksToPeerConnection(stream);
   } catch (error) {
     console.error("Error accessing media devices.", error);
   }
+};
+
+const addLocalStreamTracksToPeerConnection = (stream: MediaStream) => {
+  stream.getTracks().forEach((track) => peerConnection.addTrack(track, stream));
+};
+
+const addRemoteStreamTrack = () => {
+  peerConnection.addEventListener("track", async (event) => {
+    console.info("Received track: ", event);
+    const [remoteStream] = event.streams;
+    remoteVideoElement.srcObject = remoteStream;
+  });
 };
 
 const getScreenSharingAndRecording = async (
@@ -52,10 +71,7 @@ const getScreenSharingAndRecording = async (
       await navigator.mediaDevices.getDisplayMedia(options);
     console.log("[Display media] Got MediaStream: ", stream);
 
-    const sharingScreenUserElement = document.getElementById(
-      "user-1-sharing-screen",
-    )! as HTMLVideoElement;
-    sharingScreenUserElement.srcObject = stream;
+    localSharingScreenElement.srcObject = stream;
   } catch (error) {
     console.error("Error accessing display media.", error);
   }
