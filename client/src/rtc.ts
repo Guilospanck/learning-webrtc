@@ -1,7 +1,20 @@
-import { initPeer, peerConnection, sendOffer } from "./peer";
+import {
+  createDataChannel,
+  initPeer,
+  peerConnection,
+  sendOffer,
+  sendToDataChannel,
+} from "./peer";
 
-const screenSharingBtn = document.getElementById("screenSharingBtn");
-const initiateOfferBtn = document.getElementById("initiateOfferBtn");
+const screenSharingBtn = document.getElementById("screen-sharing-btn");
+const initiateOfferBtn = document.getElementById("initiate-offer-btn");
+const createDataChannelBtn = document.getElementById(
+  "create-data-channel-btn",
+)! as HTMLButtonElement;
+const sendMessageButton = document.getElementById(
+  "send-message-btn",
+)! as HTMLButtonElement;
+
 const localVideoElement = document.getElementById(
   "local-camera-video",
 )! as HTMLVideoElement;
@@ -12,6 +25,13 @@ const remoteVideoElement = document.getElementById(
   "remote-camera-video",
 )! as HTMLVideoElement;
 
+const messageBox = document.getElementById("message-box")! as HTMLInputElement;
+
+// Status indicators
+const localCameraStatus = document.getElementById("local-camera-status")! as HTMLSpanElement;
+const screenStatus = document.getElementById("screen-status")! as HTMLSpanElement;
+const remoteCameraStatus = document.getElementById("remote-camera-status")! as HTMLSpanElement;
+
 export const initiateWebRTC = async () => {
   await getAudioAndVideoDevices();
 
@@ -21,7 +41,23 @@ export const initiateWebRTC = async () => {
   });
 
   initiateOfferBtn?.addEventListener("click", async () => {
+    const button = initiateOfferBtn as HTMLButtonElement;
     await sendOffer();
+    button.textContent = "Connection Started";
+    button.disabled = true;
+  });
+
+  createDataChannelBtn?.addEventListener("click", () => {
+    const button = createDataChannelBtn as HTMLButtonElement;
+    createDataChannel();
+    button.textContent = "Data Channel Created";
+    button.disabled = true;
+  });
+
+  sendMessageButton?.addEventListener("click", () => {
+    const message = messageBox.value;
+    sendToDataChannel(message);
+    messageBox.value = "";
   });
 
   await getConnectedDevices();
@@ -44,6 +80,7 @@ const getAudioAndVideoDevices = async (
     console.log("[User media] Got MediaStream:", stream);
 
     localVideoElement.srcObject = stream;
+    localCameraStatus.classList.add("active");
 
     addLocalStreamTracksToPeerConnection(stream);
   } catch (error) {
@@ -60,6 +97,7 @@ const addRemoteStreamTrack = () => {
     console.info("Received track: ", event);
     const [remoteStream] = event.streams;
     remoteVideoElement.srcObject = remoteStream;
+    remoteCameraStatus.classList.add("active");
   });
 };
 
@@ -72,6 +110,7 @@ const getScreenSharingAndRecording = async (
     console.log("[Display media] Got MediaStream: ", stream);
 
     localSharingScreenElement.srcObject = stream;
+    screenStatus.classList.add("active");
   } catch (error) {
     console.error("Error accessing display media.", error);
   }

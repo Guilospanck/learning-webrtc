@@ -1,12 +1,24 @@
 import { SignalingServer, type Message } from "./signaling-server";
 
+const messagesTextArea = document.getElementById(
+  "messages",
+)! as HTMLTextAreaElement;
+
+const messageBox = document.getElementById("message-box")! as HTMLInputElement;
+const sendMessageButton = document.getElementById(
+  "send-message-btn",
+)! as HTMLButtonElement;
+
+const messagingStatus = document.getElementById("messaging-status")! as HTMLSpanElement;
+
 const CONFIGURATION = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
 };
 
 const signalingChannel = new SignalingServer();
-
 export const peerConnection = new RTCPeerConnection(CONFIGURATION);
+
+let dataChannel: RTCDataChannel | undefined = undefined;
 
 export const initPeer = () => {
   // Someone sent us a response to our offering
@@ -19,6 +31,8 @@ export const initPeer = () => {
   onLocalIceCandidate();
   // Listen for successfully connected peers
   onConnectionCompleted();
+  // Listen to remote data channel creation
+  onDataChannelReceived();
 };
 
 // Offering is an active process. Answering is passive.
@@ -29,6 +43,59 @@ export const sendOffer = async () => {
   await peerConnection.setLocalDescription(offer);
 
   signalingChannel.send({ msgType: "offer", value: JSON.stringify(offer) });
+};
+
+export const createDataChannel = () => {
+  dataChannel = peerConnection.createDataChannel("messages");
+  listenToDataChannelEvents();
+  console.info("Data channel created!");
+};
+
+export const sendToDataChannel = (message: string) => {
+  if (!dataChannel) return;
+
+  dataChannel.send(message);
+  messagesTextArea.textContent += `Me: ${message}\n`;
+};
+
+const onDataChannelReceived = () => {
+  peerConnection.addEventListener("datachannel", (event) => {
+    console.info(
+      "Received a new data channel from the peer connection: ",
+      event,
+    );
+    dataChannel = event.channel;
+
+    listenToDataChannelEvents();
+  });
+};
+
+const listenToDataChannelEvents = () => {
+  if (!dataChannel) {
+    createDataChannel();
+  }
+
+  // Enable textarea and button when opened
+  dataChannel?.addEventListener("open", () => {
+    console.info("Data channel opened!");
+    messageBox.disabled = false;
+    messageBox.focus();
+    sendMessageButton.disabled = false;
+    messagingStatus.classList.add("active");
+  });
+
+  // Disable input when closed
+  dataChannel?.addEventListener("close", () => {
+    console.info("Data channel closed!");
+    messageBox.disabled = true;
+    sendMessageButton.disabled = true;
+    messagingStatus.classList.remove("active");
+  });
+
+  dataChannel?.addEventListener("message", (event: MessageEvent<string>) => {
+    const message = event.data;
+    messagesTextArea.textContent += `Peer: ${message}\n`;
+  });
 };
 
 const onRemoteAnswer = () => {
