@@ -18,6 +18,10 @@ cd client/ && npm i && npm run dev
 
 Now go to `http://localhost:3000` and (usually) `http://localhost:3001` (otherwise check starting logs of the vite).
 
+## Development
+
+We have an `.env.example` file with some envs that you might one to use. If you do, `cp .env.example .env.`. What each flag do is described there in the example file.
+
 ## Troubleshooting
 
 ### Video flickering upon peer connection

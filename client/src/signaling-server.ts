@@ -12,7 +12,14 @@ export class SignalingServer {
   constructor() {
     this.listeners = new Map();
 
-    this.socket = new WebSocket("ws://localhost:8080/ws");
+    let url = "ws://localhost:8080/ws";
+    if (import.meta.env.VITE_USE_WS_PROXY === "true") {
+      // Get the url dynamically because we are using proxy and the vite port
+      // might be different than 3000 if this is not the only client we started.
+      const scheme = location.protocol === "https:" ? "wss" : "ws";
+      url = `${scheme}://${location.host}/ws`;
+    }
+    this.socket = new WebSocket(url);
 
     this.socket.onopen = () => {
       console.log("Connected to signaling server");
