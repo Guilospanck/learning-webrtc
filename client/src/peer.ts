@@ -9,7 +9,13 @@ const sendMessageButton = document.getElementById(
   "send-message-btn",
 )! as HTMLButtonElement;
 
-const messagingStatus = document.getElementById("messaging-status")! as HTMLSpanElement;
+const messagingStatus = document.getElementById(
+  "messaging-status",
+)! as HTMLSpanElement;
+
+const createDataChannelBtn = document.getElementById(
+  "create-data-channel-btn",
+)! as HTMLButtonElement;
 
 const CONFIGURATION = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
@@ -32,7 +38,7 @@ export const initPeer = () => {
   // Listen for successfully connected peers
   onConnectionCompleted();
   // Listen to remote data channel creation
-  onDataChannelReceived();
+  onRemoteDataChannel();
 };
 
 // Offering is an active process. Answering is passive.
@@ -47,8 +53,8 @@ export const sendOffer = async () => {
 
 export const createDataChannel = () => {
   dataChannel = peerConnection.createDataChannel("messages");
-  listenToDataChannelEvents();
   console.info("Data channel created!");
+  listenToDataChannelEvents();
 };
 
 export const sendToDataChannel = (message: string) => {
@@ -58,26 +64,23 @@ export const sendToDataChannel = (message: string) => {
   messagesTextArea.textContent += `Me: ${message}\n`;
 };
 
-const onDataChannelReceived = () => {
+const onRemoteDataChannel = () => {
   peerConnection.addEventListener("datachannel", (event) => {
     console.info(
       "Received a new data channel from the peer connection: ",
       event,
     );
     dataChannel = event.channel;
-
     listenToDataChannelEvents();
   });
 };
 
 const listenToDataChannelEvents = () => {
-  if (!dataChannel) {
-    createDataChannel();
-  }
-
   // Enable textarea and button when opened
   dataChannel?.addEventListener("open", () => {
     console.info("Data channel opened!");
+    createDataChannelBtn.disabled = true;
+    createDataChannelBtn.textContent = "Data Channel Established";
     messageBox.disabled = false;
     messageBox.focus();
     sendMessageButton.disabled = false;
@@ -87,6 +90,8 @@ const listenToDataChannelEvents = () => {
   // Disable input when closed
   dataChannel?.addEventListener("close", () => {
     console.info("Data channel closed!");
+    createDataChannelBtn.disabled = false;
+    createDataChannelBtn.textContent = "Create Data Channel";
     messageBox.disabled = true;
     sendMessageButton.disabled = true;
     messagingStatus.classList.remove("active");
@@ -184,8 +189,7 @@ const onConnectionCompleted = () => {
   peerConnection.addEventListener("connectionstatechange", (event) => {
     console.info("Connection state changed: ", peerConnection.connectionState);
     if (peerConnection.connectionState === "connected") {
-      console.log("Peers connected!");
-      console.log(event);
+      console.log("Peer connected: ", event);
     }
   });
 };

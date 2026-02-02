@@ -6,8 +6,12 @@ import {
   sendToDataChannel,
 } from "./peer";
 
-const screenSharingBtn = document.getElementById("screen-sharing-btn");
-const initiateOfferBtn = document.getElementById("initiate-offer-btn");
+const screenSharingBtn = document.getElementById(
+  "screen-sharing-btn",
+)! as HTMLButtonElement;
+const initiateOfferBtn = document.getElementById(
+  "initiate-offer-btn",
+)! as HTMLButtonElement;
 const createDataChannelBtn = document.getElementById(
   "create-data-channel-btn",
 )! as HTMLButtonElement;
@@ -28,9 +32,15 @@ const remoteVideoElement = document.getElementById(
 const messageBox = document.getElementById("message-box")! as HTMLInputElement;
 
 // Status indicators
-const localCameraStatus = document.getElementById("local-camera-status")! as HTMLSpanElement;
-const screenStatus = document.getElementById("screen-status")! as HTMLSpanElement;
-const remoteCameraStatus = document.getElementById("remote-camera-status")! as HTMLSpanElement;
+const localCameraStatus = document.getElementById(
+  "local-camera-status",
+)! as HTMLSpanElement;
+const screenStatus = document.getElementById(
+  "screen-status",
+)! as HTMLSpanElement;
+const remoteCameraStatus = document.getElementById(
+  "remote-camera-status",
+)! as HTMLSpanElement;
 
 export const initiateWebRTC = async () => {
   await getAudioAndVideoDevices();
@@ -41,17 +51,13 @@ export const initiateWebRTC = async () => {
   });
 
   initiateOfferBtn?.addEventListener("click", async () => {
-    const button = initiateOfferBtn as HTMLButtonElement;
     await sendOffer();
-    button.textContent = "Connection Started";
-    button.disabled = true;
+    initiateOfferBtn.textContent = "Connection Started";
+    initiateOfferBtn.disabled = true;
   });
 
   createDataChannelBtn?.addEventListener("click", () => {
-    const button = createDataChannelBtn as HTMLButtonElement;
     createDataChannel();
-    button.textContent = "Data Channel Created";
-    button.disabled = true;
   });
 
   sendMessageButton?.addEventListener("click", () => {
