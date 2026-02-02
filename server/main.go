@@ -18,7 +18,7 @@ const (
 )
 
 type Message struct {
-	MsgType MsgType `json:"msgtype"`
+	MsgType MsgType `json:"msgType"`
 	Value   string  `json:"value"`
 }
 
