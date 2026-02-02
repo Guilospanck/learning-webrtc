@@ -18,7 +18,14 @@ const createDataChannelBtn = document.getElementById(
 )! as HTMLButtonElement;
 
 const CONFIGURATION = {
-  iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+  iceServers: [
+    // { urls: "stun:stun.l.google.com:19302" },
+    {
+      urls: "turn:192.168.1.118:3478",
+      username: "turnuser",
+      credential: "turnpass",
+    },
+  ],
 };
 
 const signalingChannel = new SignalingServer();
@@ -197,7 +204,9 @@ const onConnectionCompleted = () => {
     console.info("Connection state changed: ", peerConnection.connectionState);
     if (peerConnection.connectionState === "connected") {
       console.log("Peer connected: ", event);
-      const initiateOfferBtn = document.getElementById("initiate-offer-btn") as HTMLButtonElement;
+      const initiateOfferBtn = document.getElementById(
+        "initiate-offer-btn",
+      ) as HTMLButtonElement;
       if (initiateOfferBtn) {
         initiateOfferBtn.textContent = "Connection established";
         initiateOfferBtn.disabled = true;
