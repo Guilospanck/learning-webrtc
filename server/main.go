@@ -101,6 +101,7 @@ func (h *Hub) run() {
 }
 
 func (h *Hub) handleWebSocket(w http.ResponseWriter, r *http.Request) {
+	log.Println("Request hit /ws")
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("WebSocket upgrade error: %v", err)

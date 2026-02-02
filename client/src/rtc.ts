@@ -1,3 +1,5 @@
+import { initPeer } from "./peer";
+
 const screenSharingBtn = document.getElementById("screenSharingBtn");
 
 export const initiateWebRTC = async () => {
@@ -10,6 +12,9 @@ export const initiateWebRTC = async () => {
 
   await getConnectedDevices();
   listenForDevicesChanges;
+
+  // Init peer offer/answer SDP events
+  initPeer();
 };
 
 const getAudioAndVideoDevices = async (
