@@ -5,6 +5,8 @@ import {
   messagingStatus,
   sendMessageButton,
   deactivateVideo,
+  initiateOfferBtn,
+  screenSharingBtn,
 } from "./ui-elements";
 
 const CONFIGURATION = {
@@ -236,13 +238,11 @@ const onConnectionCompleted = () => {
     console.info("Connection state changed: ", peerConnection.connectionState);
     if (peerConnection.connectionState === "connected") {
       console.log("Peer connected: ", event);
-      const initiateOfferBtn = document.getElementById(
-        "initiate-offer-btn",
-      ) as HTMLButtonElement;
-      if (initiateOfferBtn) {
-        initiateOfferBtn.textContent = "Connection established";
-        initiateOfferBtn.disabled = true;
-      }
+
+      initiateOfferBtn.textContent = "Connection established";
+      initiateOfferBtn.disabled = true;
+
+      screenSharingBtn.disabled = false;
     }
   });
 };
