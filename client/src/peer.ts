@@ -1,21 +1,14 @@
 import { SignalingServer, type Message } from "./signaling-server";
-
-const messagesTextArea = document.getElementById(
-  "messages",
-)! as HTMLTextAreaElement;
-
-const messageBox = document.getElementById("message-box")! as HTMLInputElement;
-const sendMessageButton = document.getElementById(
-  "send-message-btn",
-)! as HTMLButtonElement;
-
-const messagingStatus = document.getElementById(
-  "messaging-status",
-)! as HTMLSpanElement;
-
-const createDataChannelBtn = document.getElementById(
-  "create-data-channel-btn",
-)! as HTMLButtonElement;
+import {
+  messageBox,
+  messagesTextArea,
+  messagingStatus,
+  sendMessageButton,
+  remoteVideoElement,
+  remoteCameraStatus,
+  screenStatus,
+  sharingScreenElement,
+} from "./ui-elements";
 
 const CONFIGURATION = {
   iceServers: [
@@ -33,6 +26,8 @@ export const peerConnection = new RTCPeerConnection(CONFIGURATION);
 let dataChannel: RTCDataChannel | undefined = undefined;
 
 export const initPeer = () => {
+  // Creates the data channel
+  createDataChannel();
   // Handle automatic negotiation when data channels are created
   onNegotiationNeeded();
   // Someone sent us a response to our offering
@@ -59,7 +54,7 @@ export const sendOffer = async () => {
   signalingChannel.send({ msgType: "offer", value: JSON.stringify(offer) });
 };
 
-export const createDataChannel = () => {
+const createDataChannel = () => {
   try {
     dataChannel = peerConnection.createDataChannel("messages");
     listenToDataChannelEvents();
@@ -69,12 +64,35 @@ export const createDataChannel = () => {
   }
 };
 
-export const sendToDataChannel = (message: string) => {
+export type DataChannelMessageType =
+  | "message"
+  | "video_track_added"
+  | "audio_track_added"
+  | "screen_track_added"
+  | "video_track_removed"
+  | "audio_track_removed"
+  | "screen_track_removed";
+
+type DataChannelMessage = {
+  type: DataChannelMessageType;
+  value: string;
+};
+
+type TrackID = string;
+export const ReceivedTracksSignals: Map<
+  TrackID,
+  Exclude<DataChannelMessageType, "message">
+> = new Map();
+
+export const sendToDataChannel = (message: DataChannelMessage) => {
   if (!dataChannel) return;
 
-  dataChannel.send(message);
-  messagesTextArea.textContent += `Me: ${message}\n`;
-  messagesTextArea.scrollTop = messagesTextArea.scrollHeight;
+  dataChannel.send(JSON.stringify(message));
+
+  if (message.type === "message") {
+    messagesTextArea.textContent += `Me: ${message.value}\n`;
+    messagesTextArea.scrollTop = messagesTextArea.scrollHeight;
+  }
 };
 
 const onRemoteDataChannel = () => {
@@ -92,8 +110,6 @@ const listenToDataChannelEvents = () => {
   // Enable textarea and button when opened
   dataChannel?.addEventListener("open", () => {
     console.info("Data channel opened!");
-    createDataChannelBtn.disabled = true;
-    createDataChannelBtn.textContent = "Data Channel Established";
     messageBox.disabled = false;
     messageBox.focus();
     sendMessageButton.disabled = false;
@@ -103,17 +119,38 @@ const listenToDataChannelEvents = () => {
   // Disable input when closed
   dataChannel?.addEventListener("close", () => {
     console.info("Data channel closed!");
-    createDataChannelBtn.disabled = false;
-    createDataChannelBtn.textContent = "Create Data Channel";
     messageBox.disabled = true;
     sendMessageButton.disabled = true;
     messagingStatus.classList.remove("active");
   });
 
   dataChannel?.addEventListener("message", (event: MessageEvent<string>) => {
-    const message = event.data;
-    messagesTextArea.textContent += `Peer: ${message}\n`;
-    messagesTextArea.scrollTop = messagesTextArea.scrollHeight;
+    const { type, value } = JSON.parse(event.data) as DataChannelMessage;
+
+    if (type === "message") {
+      messagesTextArea.textContent += `Peer: ${value}\n`;
+      messagesTextArea.scrollTop = messagesTextArea.scrollHeight;
+      return;
+    }
+
+    if (
+      ["video_track_added", "audio_track_added", "screen_track_added"].includes(
+        type,
+      )
+    ) {
+      ReceivedTracksSignals.set(value, type);
+      return;
+    }
+
+    ReceivedTracksSignals.delete(value);
+
+    if (type === "video_track_removed") {
+      remoteVideoElement.srcObject = null;
+      remoteCameraStatus.classList.remove("active");
+    } else if (type === "screen_track_removed") {
+      sharingScreenElement.srcObject = null;
+      screenStatus.classList.remove("active");
+    }
   });
 };
 

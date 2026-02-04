@@ -1,90 +1,66 @@
 import {
-  createDataChannel,
   initPeer,
   peerConnection,
+  ReceivedTracksSignals,
   sendOffer,
   sendToDataChannel,
 } from "./peer";
-
-const screenSharingBtn = document.getElementById(
-  "screen-sharing-btn",
-)! as HTMLButtonElement;
-const initiateOfferBtn = document.getElementById(
-  "initiate-offer-btn",
-)! as HTMLButtonElement;
-const createDataChannelBtn = document.getElementById(
-  "create-data-channel-btn",
-)! as HTMLButtonElement;
-const sendMessageButton = document.getElementById(
-  "send-message-btn",
-)! as HTMLButtonElement;
-
-const localVideoElement = document.getElementById(
-  "local-camera-video",
-)! as HTMLVideoElement;
-const localSharingScreenElement = document.getElementById(
-  "local-sharing-screen",
-)! as HTMLVideoElement;
-const remoteVideoElement = document.getElementById(
-  "remote-camera-video",
-)! as HTMLVideoElement;
-
-const messageBox = document.getElementById("message-box")! as HTMLInputElement;
-
-// Status indicators
-const localCameraStatus = document.getElementById(
-  "local-camera-status",
-)! as HTMLSpanElement;
-const screenStatus = document.getElementById(
-  "screen-status",
-)! as HTMLSpanElement;
-const remoteCameraStatus = document.getElementById(
-  "remote-camera-status",
-)! as HTMLSpanElement;
+import {
+  initiateOfferBtn,
+  localCameraStatus,
+  localVideoElement,
+  messageBox,
+  remoteCameraStatus,
+  remoteVideoElement,
+  screenSharingBtn,
+  screenStatus,
+  sendMessageButton,
+  sharingScreenElement,
+} from "./ui-elements";
 
 export const initiateWebRTC = async () => {
   await getAudioAndVideoDevices();
 
-  // The screensharing MUST be user initiated.
-  screenSharingBtn?.addEventListener("click", async () => {
-    await getScreenSharingAndRecording();
-  });
-
-  initiateOfferBtn?.addEventListener("click", async () => {
-    await sendOffer();
-    initiateOfferBtn.textContent = "Connection Started";
-    initiateOfferBtn.disabled = true;
-  });
-
-  createDataChannelBtn?.addEventListener("click", () => {
-    createDataChannel();
-  });
-
-  sendMessageButton?.addEventListener("click", () => {
-    const message = messageBox.value;
-    sendToDataChannel(message);
-    messageBox.value = "";
-  });
-
-  messageBox?.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      const message = messageBox.value;
-      if (message.trim()) {
-        sendToDataChannel(message);
-        messageBox.value = "";
-      }
-    }
-  });
+  listenForWebAppInputs();
 
   await getConnectedDevices();
   listenForDevicesChanges;
 
   // listen to remote tracks
-  addRemoteStreamTrack();
+  listenRemoteStreamTrack();
 
   // Init peer offer/answer SDP events and gather ICE candidates
   initPeer();
+};
+
+const listenForWebAppInputs = () => {
+  // The screensharing MUST be user initiated.
+  screenSharingBtn.addEventListener("click", async () => {
+    await getScreenSharingAndRecording();
+  });
+
+  initiateOfferBtn.addEventListener("click", async () => {
+    await sendOffer();
+    initiateOfferBtn.textContent = "Connection Started";
+    initiateOfferBtn.disabled = true;
+  });
+
+  sendMessageButton.addEventListener("click", () => {
+    const message = messageBox.value;
+    sendToDataChannel({ type: "message", value: message });
+    messageBox.value = "";
+  });
+
+  messageBox.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      const message = messageBox.value;
+      if (message.trim()) {
+        sendToDataChannel({ type: "message", value: message });
+        messageBox.value = "";
+      }
+    }
+  });
 };
 
 const getAudioAndVideoDevices = async (
@@ -99,22 +75,51 @@ const getAudioAndVideoDevices = async (
     localVideoElement.srcObject = stream;
     localCameraStatus.classList.add("active");
 
-    addLocalStreamTracksToPeerConnection(stream);
+    addLocalUserMediaStreamTracksToPeerConnection(stream);
   } catch (error) {
     console.error("Error accessing media devices.", error);
   }
 };
 
-const addLocalStreamTracksToPeerConnection = (stream: MediaStream) => {
-  stream.getTracks().forEach((track) => peerConnection.addTrack(track, stream));
+const addLocalUserMediaStreamTracksToPeerConnection = (stream: MediaStream) => {
+  stream.getTracks().forEach((track) => {
+    const messageType =
+      track.kind === "audio" ? "audio_track_added" : "video_track_added";
+    sendToDataChannel({
+      type: messageType,
+      value: track.id,
+    });
+
+    peerConnection.addTrack(track, stream);
+
+    track.onended = () => {
+      localVideoElement.srcObject = null;
+      localCameraStatus.classList.remove("active");
+
+      // Send to peers so they know this audio/video has stopped
+      const messageType =
+        track.kind === "audio" ? "audio_track_removed" : "video_track_removed";
+      sendToDataChannel({ type: messageType, value: track.id });
+    };
+  });
 };
 
-const addRemoteStreamTrack = () => {
+const listenRemoteStreamTrack = () => {
   peerConnection.addEventListener("track", async (event) => {
     console.info("Received track: ", event);
+    const track = event.track;
+    if (track.kind === "audio") return;
+
     const [remoteStream] = event.streams;
-    remoteVideoElement.srcObject = remoteStream;
-    remoteCameraStatus.classList.add("active");
+    const trackSignal = ReceivedTracksSignals.get(track.id);
+
+    if (trackSignal && trackSignal === "screen_track_added") {
+      sharingScreenElement.srcObject = remoteStream;
+      screenStatus.classList.add("active");
+    } else {
+      remoteVideoElement.srcObject = remoteStream;
+      remoteCameraStatus.classList.add("active");
+    }
   });
 };
 
@@ -126,11 +131,32 @@ const getScreenSharingAndRecording = async (
       await navigator.mediaDevices.getDisplayMedia(options);
     console.log("[Display media] Got MediaStream: ", stream);
 
-    localSharingScreenElement.srcObject = stream;
+    sharingScreenElement.srcObject = stream;
     screenStatus.classList.add("active");
+    addLocalDisplayMediaStreamTracksToPeerConnection(stream);
   } catch (error) {
     console.error("Error accessing display media.", error);
   }
+};
+
+const addLocalDisplayMediaStreamTracksToPeerConnection = (
+  stream: MediaStream,
+) => {
+  stream.getTracks().forEach((track) => {
+    sendToDataChannel({
+      type: "screen_track_added",
+      value: track.id,
+    });
+
+    peerConnection.addTrack(track, stream);
+
+    track.onended = () => {
+      sharingScreenElement.srcObject = null;
+      screenStatus.classList.remove("active");
+      // Send to peers so they know this screensharing has stopped
+      sendToDataChannel({ type: "screen_track_removed", value: track.id });
+    };
+  });
 };
 
 const getConnectedDevices = async (kind?: MediaDeviceKind) => {
