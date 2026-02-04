@@ -40,3 +40,40 @@ export const messageBox = document.getElementById(
 export const messagesTextArea = document.getElementById(
   "messages",
 )! as HTMLTextAreaElement;
+
+export const activateVideo = (
+  type: "local" | "remote" | "screen",
+  media: MediaStream,
+) => {
+  switch (type) {
+    case "local":
+      localVideoElement.srcObject = media;
+      localCameraStatus.classList.add("active");
+      break;
+    case "remote":
+      remoteVideoElement.srcObject = media;
+      remoteCameraStatus.classList.add("active");
+      break;
+    case "screen":
+      sharingScreenElement.srcObject = media;
+      screenStatus.classList.add("active");
+      break;
+  }
+};
+
+export const deactivateVideo = (type: "local" | "remote" | "screen") => {
+  switch (type) {
+    case "local":
+      localVideoElement.srcObject = null;
+      localCameraStatus.classList.remove("active");
+      break;
+    case "remote":
+      remoteVideoElement.srcObject = null;
+      remoteCameraStatus.classList.remove("active");
+      break;
+    case "screen":
+      sharingScreenElement.srcObject = null;
+      screenStatus.classList.remove("active");
+      break;
+  }
+};

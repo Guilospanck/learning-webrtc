@@ -4,10 +4,7 @@ import {
   messagesTextArea,
   messagingStatus,
   sendMessageButton,
-  remoteVideoElement,
-  remoteCameraStatus,
-  screenStatus,
-  sharingScreenElement,
+  deactivateVideo,
 } from "./ui-elements";
 
 const CONFIGURATION = {
@@ -145,11 +142,9 @@ const listenToDataChannelEvents = () => {
     ReceivedTracksSignals.delete(value);
 
     if (type === "video_track_removed") {
-      remoteVideoElement.srcObject = null;
-      remoteCameraStatus.classList.remove("active");
+      deactivateVideo("remote");
     } else if (type === "screen_track_removed") {
-      sharingScreenElement.srcObject = null;
-      screenStatus.classList.remove("active");
+      deactivateVideo("screen");
     }
   });
 };

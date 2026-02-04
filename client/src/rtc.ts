@@ -6,16 +6,12 @@ import {
   sendToDataChannel,
 } from "./peer";
 import {
+  activateVideo,
+  deactivateVideo,
   initiateOfferBtn,
-  localCameraStatus,
-  localVideoElement,
   messageBox,
-  remoteCameraStatus,
-  remoteVideoElement,
   screenSharingBtn,
-  screenStatus,
   sendMessageButton,
-  sharingScreenElement,
 } from "./ui-elements";
 
 export const initiateWebRTC = async () => {
@@ -72,8 +68,7 @@ const getAudioAndVideoDevices = async (
       await navigator.mediaDevices.getUserMedia(constraints);
     console.log("[User media] Got MediaStream:", stream);
 
-    localVideoElement.srcObject = stream;
-    localCameraStatus.classList.add("active");
+    activateVideo("local", stream);
 
     addLocalUserMediaStreamTracksToPeerConnection(stream);
   } catch (error) {
@@ -93,8 +88,7 @@ const addLocalUserMediaStreamTracksToPeerConnection = (stream: MediaStream) => {
     peerConnection.addTrack(track, stream);
 
     track.onended = () => {
-      localVideoElement.srcObject = null;
-      localCameraStatus.classList.remove("active");
+      deactivateVideo("local");
 
       // Send to peers so they know this audio/video has stopped
       const messageType =
@@ -114,11 +108,9 @@ const listenRemoteStreamTrack = () => {
     const trackSignal = ReceivedTracksSignals.get(track.id);
 
     if (trackSignal && trackSignal === "screen_track_added") {
-      sharingScreenElement.srcObject = remoteStream;
-      screenStatus.classList.add("active");
+      activateVideo("screen", remoteStream);
     } else {
-      remoteVideoElement.srcObject = remoteStream;
-      remoteCameraStatus.classList.add("active");
+      activateVideo("remote", remoteStream);
     }
   });
 };
@@ -131,8 +123,7 @@ const getScreenSharingAndRecording = async (
       await navigator.mediaDevices.getDisplayMedia(options);
     console.log("[Display media] Got MediaStream: ", stream);
 
-    sharingScreenElement.srcObject = stream;
-    screenStatus.classList.add("active");
+    activateVideo("screen", stream);
     addLocalDisplayMediaStreamTracksToPeerConnection(stream);
   } catch (error) {
     console.error("Error accessing display media.", error);
@@ -151,8 +142,7 @@ const addLocalDisplayMediaStreamTracksToPeerConnection = (
     peerConnection.addTrack(track, stream);
 
     track.onended = () => {
-      sharingScreenElement.srcObject = null;
-      screenStatus.classList.remove("active");
+      deactivateVideo("screen");
       // Send to peers so they know this screensharing has stopped
       sendToDataChannel({ type: "screen_track_removed", value: track.id });
     };
