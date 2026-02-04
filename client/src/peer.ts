@@ -19,12 +19,12 @@ const createDataChannelBtn = document.getElementById(
 
 const CONFIGURATION = {
   iceServers: [
-    // { urls: "stun:stun.l.google.com:19302" },
-    {
-      urls: "turn:192.168.1.118:3478",
-      username: "turnuser",
-      credential: "turnpass",
-    },
+    { urls: "stun:stun.l.google.com:19302" },
+    // {
+    //   urls: "turn:192.168.1.118:3478",
+    //   username: "turnuser",
+    //   credential: "turnpass",
+    // },
   ],
 };
 

@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WebRTC Learning Hub</title>
     <link rel="stylesheet" href="src/style.css" />
-
   </head>
   <body>
     <div class="container">
@@ -22,7 +21,6 @@
               <h2 class="section-title">Connection</h2>
               <div class="button-group">
                 <button id="initiate-offer-btn">Start Connection</button>
-                <button id="create-data-channel-btn">Create Data Channel</button>
               </div>
             </section>
 
@@ -45,11 +43,11 @@
                   readonly
                 ></textarea>
                 <div class="button-row">
-                  <input 
-                    id="message-box" 
-                    type="text" 
+                  <input
+                    id="message-box"
+                    type="text"
                     placeholder="Type a message..."
-                    disabled 
+                    disabled
                   />
                   <button id="send-message-btn" disabled>Send</button>
                 </div>
@@ -61,24 +59,40 @@
             <h2 class="section-title">Video Streams</h2>
             <div class="video-grid">
               <div class="video-container">
-                <video id="local-camera-video" autoplay playsinline muted></video>
+                <video
+                  id="local-camera-video"
+                  autoplay
+                  playsinline
+                  muted
+                ></video>
                 <div class="video-label">
                   Local Camera
-                  <span class="status-indicator" id="local-camera-status"></span>
+                  <span
+                    class="status-indicator"
+                    id="local-camera-status"
+                  ></span>
                 </div>
               </div>
               <div class="video-container">
-                <video id="local-sharing-screen" autoplay playsinline muted></video>
+                <video id="sharing-screen" autoplay playsinline muted></video>
                 <div class="video-label">
                   Screen Share
                   <span class="status-indicator" id="screen-status"></span>
                 </div>
               </div>
               <div class="video-container">
-                <video id="remote-camera-video" autoplay playsinline muted></video>
+                <video
+                  id="remote-camera-video"
+                  autoplay
+                  playsinline
+                  muted
+                ></video>
                 <div class="video-label">
                   Remote Camera
-                  <span class="status-indicator" id="remote-camera-status"></span>
+                  <span
+                    class="status-indicator"
+                    id="remote-camera-status"
+                  ></span>
                 </div>
               </div>
             </div>
