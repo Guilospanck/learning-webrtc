@@ -1,3 +1,5 @@
+import { State } from "./state";
+
 /* Buttons */
 export const screenSharingBtn = document.getElementById(
   "screen-sharing-btn",
@@ -57,6 +59,7 @@ export const activateVideo = (
     case "screen":
       sharingScreenElement.srcObject = media;
       screenStatus.classList.add("active");
+      State.isSharingScreen = true;
       break;
   }
 };
@@ -74,6 +77,9 @@ export const deactivateVideo = (type: "local" | "remote" | "screen") => {
     case "screen":
       sharingScreenElement.srcObject = null;
       screenStatus.classList.remove("active");
+      screenSharingBtn.disabled = false;
+      screenSharingBtn.textContent = "Share Screen";
+      State.isSharingScreen = false;
       break;
   }
 };

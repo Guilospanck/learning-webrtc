@@ -5,6 +5,7 @@ import {
   sendOffer,
   sendToDataChannel,
 } from "./peer";
+import { State } from "./state";
 import {
   activateVideo,
   deactivateVideo,
@@ -13,6 +14,8 @@ import {
   screenSharingBtn,
   sendMessageButton,
 } from "./ui-elements";
+
+let screenSharingSender: RTCRtpSender | undefined = undefined;
 
 export const initiateWebRTC = async () => {
   await getAudioAndVideoDevices();
@@ -32,7 +35,7 @@ export const initiateWebRTC = async () => {
 const listenForWebAppInputs = () => {
   // The screensharing MUST be user initiated.
   screenSharingBtn.addEventListener("click", async () => {
-    await getScreenSharingAndRecording();
+    await startStopScreenSharingAndRecording();
   });
 
   initiateOfferBtn.addEventListener("click", async () => {
@@ -109,21 +112,26 @@ const listenRemoteStreamTrack = () => {
 
     if (trackSignal && trackSignal === "screen_track_added") {
       activateVideo("screen", remoteStream);
+      // Do not allow screen sharing while other peer is doing it
+      screenSharingBtn.disabled = true;
     } else {
       activateVideo("remote", remoteStream);
     }
   });
 };
 
-const getScreenSharingAndRecording = async (
+const startStopScreenSharingAndRecording = async (
   options?: DisplayMediaStreamOptions,
 ) => {
   try {
+    if (State.isSharingScreen) {
+      removeDisplayMediaTrackFromPeerConnection();
+      return;
+    }
+
     const stream: MediaStream =
       await navigator.mediaDevices.getDisplayMedia(options);
     console.log("[Display media] Got MediaStream: ", stream);
-
-    activateVideo("screen", stream);
     addLocalDisplayMediaStreamTracksToPeerConnection(stream);
   } catch (error) {
     console.error("Error accessing display media.", error);
@@ -139,14 +147,32 @@ const addLocalDisplayMediaStreamTracksToPeerConnection = (
       value: track.id,
     });
 
-    peerConnection.addTrack(track, stream);
+    activateVideo("screen", stream);
+    screenSharingBtn.textContent = "Stop screen sharing";
 
+    screenSharingSender = peerConnection.addTrack(track, stream);
+
+    // This is triggered usually by the "Stop sharing" from the browsers own UI
     track.onended = () => {
       deactivateVideo("screen");
       // Send to peers so they know this screensharing has stopped
       sendToDataChannel({ type: "screen_track_removed", value: track.id });
     };
   });
+};
+
+const removeDisplayMediaTrackFromPeerConnection = () => {
+  if (!screenSharingSender) return;
+  const track = screenSharingSender.track;
+  peerConnection.removeTrack(screenSharingSender);
+  if (track) {
+    track.stop();
+    // Send to peers so they know this screensharing has stopped
+    sendToDataChannel({ type: "screen_track_removed", value: track.id });
+  }
+
+  deactivateVideo("screen");
+  screenSharingSender = undefined;
 };
 
 const getConnectedDevices = async (kind?: MediaDeviceKind) => {
